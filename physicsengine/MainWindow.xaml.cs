@@ -11,7 +11,7 @@ namespace physicsengine
 {
     public partial class MainWindow : Window
     {
-        private bool isDragged = false;
+
         private Ellipse ball;
         private Vector3 position;
         private Vector3 velocity = new Vector3(0, 0, 0);
