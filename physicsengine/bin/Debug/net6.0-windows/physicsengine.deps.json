@@ -1,0 +1,39 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v6.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v6.0": {
+      "physicsengine/1.0.0": {
+        "dependencies": {
+          "SlimDX": "4.0.13.43"
+        },
+        "runtime": {
+          "physicsengine.dll": {}
+        }
+      },
+      "SlimDX/4.0.13.43": {
+        "runtime": {
+          "SlimDX.dll": {
+            "assemblyVersion": "4.0.13.43",
+            "fileVersion": "0.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "physicsengine/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "SlimDX/4.0.13.43": {
+      "type": "reference",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
