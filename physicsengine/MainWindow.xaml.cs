@@ -26,7 +26,7 @@ namespace physicsengine
         private void CreateBall()
         {
             // Create a new Ball object
-            ball = new Ball(1.0f, System.Drawing.Color.Red, 50f, (float)ballcanvas.ActualHeight); // mass = 1.0, radius = 50
+            ball = new Ball(1.0f, System.Drawing.Color.Red, 50f); // mass = 1.0, radius = 50
 
             // Add the ball's DrawingShape (Ellipse) to the canvas
             ballcanvas.Children.Add(ball.DrawingShape);
@@ -80,7 +80,7 @@ namespace physicsengine
                     stopwatch.Restart(); // Restart the stopwatch for the next frame
 
                     // Update the position and velocity
-                    ball.UpdatePosition(deltaTime , (float)ballcanvas.ActualHeight, (float)ballcanvas.ActualWidth);
+                    ball.UpdatePosition(deltaTime, (float)ballcanvas.ActualHeight, (float)ballcanvas.ActualWidth);
 
                     ballbottom = ball.Position.Y + ball.Radius * 2;
                     canvasHeight = ballcanvas.ActualHeight;
@@ -88,10 +88,10 @@ namespace physicsengine
                     // Once the ball hits the bottom of the canvas, make it bounce
                     if (ballbottom >= canvasHeight)
                     {
-                        ball.Velocity = new Vector3(ball.Velocity.X, - ball.Velocity.Y * ball.BouncingFactor, ball.Velocity.Z);
+                        ball.Velocity = new Vector3(ball.Velocity.X, -ball.Velocity.Y * ball.BouncingFactor, ball.Velocity.Z);
 
                         // s0 hena b top value el fo2 el ball ashan hya dlw2ty lmsa the end of the canvas
-                        ball.Position = new Vector3 (ball.Position.X, (float) (canvasHeight - ball.Radius * 2), ball.Position.Z);
+                        ball.Position = new Vector3(ball.Position.X, (float)(canvasHeight - ball.Radius * 2), ball.Position.Z);
 
                         // If the absolute value of velocity is small, stop the ball
                         if (Math.Abs(ball.Velocity.Y) < 1 && Math.Abs(ball.Velocity.X) < 1)
