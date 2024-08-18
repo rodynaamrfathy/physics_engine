@@ -50,7 +50,7 @@ namespace physicsengine
             {
                 isDragged = false;
                 ball.DrawingShape.ReleaseMouseCapture();
-                ball.Velocity = new Vector3(ball.Velocity.X, 0, ball.Velocity.Z);
+                ball.Velocity = new Vector3(0, 0, 0);
                 IsMoving = true;
                 stopwatch.Start(); // Start the stopwatch to track deltaTime
                 Task.Run(() =>
@@ -80,7 +80,7 @@ namespace physicsengine
                     stopwatch.Restart(); // Restart the stopwatch for the next frame
 
                     // Update the position and velocity
-                    ball.UpdatePosition(deltaTime);
+                    ball.UpdatePosition(deltaTime , (float)ballcanvas.ActualHeight, (float)ballcanvas.ActualWidth);
 
                     ballbottom = ball.Position.Y + ball.Radius * 2;
                     canvasHeight = ballcanvas.ActualHeight;
@@ -94,7 +94,7 @@ namespace physicsengine
                         ball.Position = new Vector3 (ball.Position.X, (float) (canvasHeight - ball.Radius * 2), ball.Position.Z);
 
                         // If the absolute value of velocity is small, stop the ball
-                        if (Math.Abs(ball.Velocity.Y) < 1)
+                        if (Math.Abs(ball.Velocity.Y) < 1 && Math.Abs(ball.Velocity.X) < 1)
                             IsMoving = false;
                     }
                 });
