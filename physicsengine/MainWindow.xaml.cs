@@ -1,116 +1,110 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Shapes;
-using System.Windows.Threading;
+using System.Diagnostics;
 using SlimDX;
 
 namespace physicsengine
 {
-
     public partial class MainWindow : Window
     {
-
         private bool isDragged = false;
-        private Ellipse ball;
-        private Point currentPosition;
-        double s0, v0 = 0, t = 0, a = 9.8;
-        double bouncingfactor = 0.7, ballbottom = 0, canvasHeight;
-        bool IsMoving;
-        Vector3 x = new Vector3(0, 0.1f, 0);
+        private Ball ball;
+        private double ballbottom = 0, canvasHeight;
+        private bool IsMoving;
+        private Stopwatch stopwatch;
 
         public MainWindow()
         {
             InitializeComponent();
             CreateBall();
+            stopwatch = new Stopwatch();
         }
 
         private void CreateBall()
         {
-            ball = new Ellipse()
-            {
-                Width = 100,
-                Height = 100,
-                Fill = Brushes.Red,
-                Stroke = Brushes.Black,
-                StrokeThickness = 1,
-            };
-            ballcanvas.Children.Add(ball);
-            Canvas.SetTop(ball, ballcanvas.ActualHeight);
-            ball.MouseLeftButtonDown += Ball_MouseLeftButtonDown;
-            ball.MouseLeftButtonUp += Ball_MouseLeftButtonUp;
-            ballcanvas.MouseMove += Ballcanvas_MouseMove;
+            // Create a new Ball object
+            ball = new Ball(1.0f, System.Drawing.Color.Red, 50f, (float)ballcanvas.ActualHeight); // mass = 1.0, radius = 50
 
+            // Add the ball's DrawingShape (Ellipse) to the canvas
+            ballcanvas.Children.Add(ball.DrawingShape);
+
+            // events
+            ball.DrawingShape.MouseLeftButtonDown += Ball_MouseLeftButtonDown;
+            ball.DrawingShape.MouseLeftButtonUp += Ball_MouseLeftButtonUp;
+            ballcanvas.MouseMove += Ballcanvas_MouseMove;
         }
+
         private void Ball_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
             isDragged = true;
-            v0 = 0;
-            t = 0;
-            a = 9.8;
-            bouncingfactor = 0.7;
-            ball.CaptureMouse();
+            ball.DrawingShape.CaptureMouse();
+            stopwatch.Reset();
         }
+
         private void Ball_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
             if (isDragged)
             {
                 isDragged = false;
-                ball.ReleaseMouseCapture();
-
-                s0 = Canvas.GetTop(ball);
-
+                ball.DrawingShape.ReleaseMouseCapture();
+                ball.Velocity = new Vector3(ball.Velocity.X, 0, ball.Velocity.Z);
                 IsMoving = true;
+                stopwatch.Start(); // Start the stopwatch to track deltaTime
                 Task.Run(() =>
                 {
                     StartFreeFall();
                 });
             }
-
         }
+
         private void Ballcanvas_MouseMove(object sender, MouseEventArgs e)
         {
             if (isDragged)
             {
                 var mousepos = e.GetPosition(ballcanvas);
-                Canvas.SetLeft(ball, mousepos.X - currentPosition.X);
-                Canvas.SetTop(ball, mousepos.Y - currentPosition.Y);
+                ball.Position = new Vector3((float)mousepos.X - ball.Radius, (float)mousepos.Y - ball.Radius, 0);
             }
         }
+
         private void StartFreeFall()
         {
             while (IsMoving)
             {
                 Dispatcher.Invoke(() =>
                 {
-                    double s = s0 + v0 * t + 0.5 * a * t * t;
-                    double v = v0 + a * t;
-                    Canvas.SetTop(ball, s);
+                    // Calculate deltaTime in seconds
+                    float deltaTime = (float)stopwatch.Elapsed.TotalSeconds * 10;
+                    stopwatch.Restart(); // Restart the stopwatch for the next frame
 
+                    // Update the position and velocity
+                    ball.UpdatePosition(deltaTime);
 
-                    ballbottom = s + ball.Height;
+                    ballbottom = ball.Position.Y + ball.Radius * 2;
                     canvasHeight = ballcanvas.ActualHeight;
-                    // one the ball hits the end of the canvas it will star bouncing
+
+                    // Once the ball hits the bottom of the canvas, make it bounce
                     if (ballbottom >= canvasHeight)
                     {
-                        v0 = -v * bouncingfactor;
-                        s0 = canvasHeight - ball.Height;
+                        ball.Velocity = new Vector3(ball.Velocity.X, - ball.Velocity.Y * ball.BouncingFactor, ball.Velocity.Z);
 
-                        t = 0.16;
+                        // s0 hena b top value el fo2 el ball ashan hya dlw2ty lmsa the end of the canvas
+                        ball.Position = new Vector3 (ball.Position.X, (float) (canvasHeight - ball.Radius * 2), ball.Position.Z);
 
-                        // if the abs of v0 is less than 1 stop the ball
-                        if (Math.Abs(v) < 1)
+                        // If the absolute value of velocity is small, stop the ball
+                        if (Math.Abs(ball.Velocity.Y) < 1)
                             IsMoving = false;
-
                     }
-                    else
-                        t += 0.16;
-
                 });
-                Thread.Sleep(10);
+
+                Thread.Sleep(10); // Small delay to avoid overloading the CPU
             }
+
+            stopwatch.Stop(); // Stop the stopwatch when the simulation ends
         }
+
 
     }
 }
