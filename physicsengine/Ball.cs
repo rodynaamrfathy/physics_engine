@@ -32,16 +32,18 @@ namespace physicsengine
         {
             if (ball2 == null) return false;
 
-            float XCenterball1 = this.Position.X - this.Radius;
-            float YCenterball1 = this.Position.Y - this.Radius;
-            float XCenterball2 = ball2.Position.X - ball2.Radius;
-            float YCenterball2 = ball2.Position.Y - ball2.Radius;
+            // Compute the center of each ball
+            float XCenterball1 = this.Position.X + this.Radius;
+            float YCenterball1 = this.Position.Y + this.Radius;
+            float XCenterball2 = ball2.Position.X + ball2.Radius;
+            float YCenterball2 = ball2.Position.Y + ball2.Radius;
 
             float diffX = XCenterball1 - XCenterball2;
             float diffY = YCenterball1 - YCenterball2;
-            float distance = (float)Math.Sqrt(Math.Pow(diffX, 2) + Math.Pow(diffY, 2));
+            float distance = (float)Math.Sqrt(diffX * diffX + diffY * diffY);
             float r1 = this.Radius;
             float r2 = ball2.Radius;
+
             return distance <= (r1 + r2);
         }
 
@@ -49,25 +51,26 @@ namespace physicsengine
         {
             if (ball2 == null) return;
 
-            float XCenterball1 = this.Position.X - this.Radius;
-            float YCenterball1 = this.Position.Y - this.Radius;
-            float XCenterball2 = ball2.Position.X - ball2.Radius;
-            float YCenterball2 = ball2.Position.Y - ball2.Radius;
+            // Compute the center of each ball
+            float XCenterball1 = this.Position.X + this.Radius;
+            float YCenterball1 = this.Position.Y + this.Radius;
+            float XCenterball2 = ball2.Position.X + ball2.Radius;
+            float YCenterball2 = ball2.Position.Y + ball2.Radius;
 
             Vector3 overlapVector = new Vector3(XCenterball1 - XCenterball2, YCenterball1 - YCenterball2, 0);
-            float distance = overlapVector.Length(); // Length of the overlap vector
-            float overlap = (this.Radius + ball2.Radius) - distance; // Amount of overlap
+            float distance = overlapVector.Length();
+            float overlap = (this.Radius + ball2.Radius) - distance;
 
             if (overlap > 0)
             {
                 Vector3 separationDirection = Vector3.Normalize(overlapVector);
-
                 Vector3 displacement = separationDirection * (overlap / 2.0f);
 
                 this.Position += displacement;
                 ball2.Position -= displacement;
             }
         }
+
 
         public void ResolveBallToBallCollison(Ball ball)
         {
@@ -152,8 +155,5 @@ namespace physicsengine
                 Canvas.SetLeft(DrawingShape, Position.X);
             }
         }
-
-
-
     }
 }
