@@ -25,7 +25,7 @@ namespace physicsengine
             stopwatch = new Stopwatch();
 
 
-            CreateShape(new Ball(1.0f, System.Drawing.Color.Red, 20f) { Position = new Vector3(50f,50f,0)});
+            //CreateShape(new Ball(1.0f, System.Drawing.Color.Red, 20f) { Position = new Vector3(50f,50f,0)});
             CreateShape(new Ball(4.0f, System.Drawing.Color.Blue, 70f) { Position = new Vector3(100f, 100f, 0) });
             CreateShape(new Ball(2.0f, System.Drawing.Color.Green, 50f) { Position = new Vector3(300f, 150f, 0) });
 
@@ -85,8 +85,6 @@ namespace physicsengine
                 {
                     float deltaTime = (float)stopwatch.Elapsed.TotalSeconds * 10;
                     stopwatch.Restart();
-
-
                     // update physics and check for collision
                     engine.Update(deltaTime, (float)ballcanvas.ActualHeight, (float)ballcanvas.ActualWidth, true);
                     renderer.UpdateCanvas(); // Redraw the canvas to reflect changes
