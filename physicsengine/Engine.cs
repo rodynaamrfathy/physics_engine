@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,9 +30,26 @@ namespace physicsengine
 
         public void Update(float deltaTime, float canvasHeight, float canvasWidth, bool IsMoving)
         {
-            foreach (var shape in shapes)
+            bool AreCollided;
+            foreach (var check in shapes)
             {
-                shape.UpdatePosition(deltaTime, canvasHeight, canvasWidth, IsMoving);
+                foreach (var shape in shapes)
+                {
+                    shape.UpdatePosition(deltaTime, canvasHeight, canvasWidth, IsMoving);
+
+                    if (check != shape && check is Ball checkBall && shape is Ball shapeBall)
+                    {
+                        AreCollided = checkBall.AreCollidedBallToBall(shapeBall);
+                        if (AreCollided)
+                        {
+                            checkBall.HandleOverlap(shapeBall);
+                            // Debug.WriteLine("collided");
+                            checkBall.ResolveBallToBallCollison(shapeBall);
+                            // Handle collision here
+                        }
+                    }
+
+                }
             }
         }
     }
