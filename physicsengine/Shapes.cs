@@ -15,6 +15,8 @@ namespace physicsengine
         public Shape DrawingShape { get; set; }
         public float Mass { get; set; }
         public Color Color { get; set; }
+        public bool IsMoving { get; set; }
+
 
         public Shapes(float mass, Color color)
         {
@@ -43,8 +45,11 @@ namespace physicsengine
             return forces;
         }
 
+        public virtual void UpdatePosition(float deltaTime, float canvasHeight, float canvasWidth, bool IsMoving)
+        {
 
-        
+        }
+
     }
 
 }
