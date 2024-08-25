@@ -1,11 +1,4 @@
-using System;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Diagnostics;
-using SlimDX;
-using System.Windows.Shapes;
+using System.Threading.Tasks;
 
 namespace physicsengine
 {
@@ -16,6 +9,8 @@ namespace physicsengine
         private bool isDragged = false;
         private Stopwatch stopwatch;
         private Shapes draggedShape;
+        private Point initialMousePosition;
+        private DateTime initialMouseDownTime;
 
 
         public MainWindow()
@@ -24,11 +19,9 @@ namespace physicsengine
             renderer = new Renderer(ballcanvas);
             stopwatch = new Stopwatch();
 
-
-            //CreateShape(new Ball(1.0f, System.Drawing.Color.Red, 20f) { Position = new Vector3(50f,50f,0)});
+            // Create shapes
             CreateShape(new Ball(4.0f, System.Drawing.Color.Blue, 70f) { Position = new Vector3(100f, 100f, 0) });
             CreateShape(new Ball(2.0f, System.Drawing.Color.Green, 50f) { Position = new Vector3(300f, 150f, 0) });
-
         }
 
         private void CreateShape(Shapes shape)
@@ -39,7 +32,6 @@ namespace physicsengine
 
             engine.AddShape(shape);
             renderer.AddShapeToCanvas(shape);
-
             renderer.UpdateShapePosition(shape);
         }
 
@@ -50,6 +42,8 @@ namespace physicsengine
             {
                 isDragged = true;
                 draggedShape.DrawingShape.CaptureMouse();
+                initialMousePosition = e.GetPosition(ballcanvas);
+                initialMouseDownTime = DateTime.Now;
                 stopwatch.Reset();
             }
         }
@@ -60,7 +54,14 @@ namespace physicsengine
             {
                 isDragged = false;
                 draggedShape.DrawingShape.ReleaseMouseCapture();
-                draggedShape.Velocity = Vector3.Zero; // Stop movement
+                var finalMousePosition = e.GetPosition(ballcanvas);
+                var timeTaken = DateTime.Now - initialMouseDownTime;
+
+                // Calculate the velocity vector based on mouse movement
+                var velocityX = (float)(finalMousePosition.X - initialMousePosition.X) / (float)timeTaken.TotalSeconds;
+                var velocityY = (float)(finalMousePosition.Y - initialMousePosition.Y) / (float)timeTaken.TotalSeconds;
+
+                draggedShape.Velocity = new Vector3(velocityX, velocityY, 0);
                 stopwatch.Start(); // Start the stopwatch for physics update
                 Task.Run(() => StartFreeFall());
             }
