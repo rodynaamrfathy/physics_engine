@@ -1,4 +1,9 @@
+using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Windows.Input;
+using System.Windows.Shapes;
+using System.Windows;
+using SlimDX;
 
 namespace physicsengine
 {
@@ -32,7 +37,7 @@ namespace physicsengine
 
             engine.AddShape(shape);
             renderer.AddShapeToCanvas(shape);
-            renderer.UpdateShapePosition(shape);
+            renderer.UpdateCanvas(shape);
         }
 
         private void Shape_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -74,7 +79,7 @@ namespace physicsengine
                 var mousePos = e.GetPosition(ballcanvas);
                 draggedShape.Position = new Vector3((float)(mousePos.X - draggedShape.DrawingShape.Width / 2),
                                                     (float)(mousePos.Y - draggedShape.DrawingShape.Height / 2), 0);
-                renderer.UpdateShapePosition(draggedShape); // Update the canvas immediately
+                renderer.UpdateCanvas(draggedShape); // Update the canvas immediately
             }
         }
 
