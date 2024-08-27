@@ -23,7 +23,7 @@ namespace physicsengine
             canvas.Children.Add(shape.DrawingShape);
         }
 
-        public void UpdateShapePosition(Shapes shape)
+        public void UpdateCanvas(Shapes shape)
         {
             Canvas.SetLeft(shape.DrawingShape, shape.Position.X);
             Canvas.SetTop(shape.DrawingShape, shape.Position.Y);
@@ -44,7 +44,7 @@ namespace physicsengine
                     var shape = canvas.Children.OfType<Shapes>().FirstOrDefault(s => s.DrawingShape == drawingShape);
                     if (shape != null)
                     {
-                        UpdateShapePosition(shape);
+                        UpdateCanvas(shape);
                     }
                 }
             }
