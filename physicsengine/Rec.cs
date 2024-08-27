@@ -1,4 +1,4 @@
-﻿using SlimDX;
+using SlimDX;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -12,7 +12,6 @@ namespace physicsengine
 {
     internal class Rec : Shapes
     {
-        public float AngularVelocity;
         public float Angle;
         private RotateTransform rotateTransform;
         public Matrix RotMat;
@@ -20,13 +19,12 @@ namespace physicsengine
         public Vector3 v2;
         public Vector3 v3;
         public Vector3 v4;
-        public Vector3 Center;
+        public Vector3 Center { get; private set; }
 
         public Rec(float mass, System.Drawing.Color color, float width, float height, Vector3 Pos) : base(mass, color)
         {
             Angle = 0;
-            AngularVelocity = 0;
-            // Set the initial position of the ball
+            // Set the initial position of the rectangle
             Velocity = new Vector3(0, 0, 0);
             RotMat = new Matrix();
 
@@ -42,94 +40,127 @@ namespace physicsengine
             Position = Pos;
             Center = new Vector3((float)(Position.X - (DrawingShape.Width / 2)), (float)(Position.Y - (DrawingShape.Height / 2)), 0);
 
-            v1 = new Vector3(-(float)(Center.X + (DrawingShape.Width / 2)), (float)(Center.Y + (DrawingShape.Height / 2)), 0);
-            v2 = new Vector3((float)(Center.X + (DrawingShape.Width / 2)), (float)(Center.Y + (DrawingShape.Height / 2)), 0);
-            v3 = new Vector3((float)(Center.X + (DrawingShape.Width / 2)), -(float)(Center.Y + (DrawingShape.Height / 2)), 0);
-            v4 = new Vector3(-(float)(Center.X + (DrawingShape.Width / 2)), -(float)(Center.Y + (DrawingShape.Height / 2)), 0);
-
+            // Initialize corners
+            UpdateCorners();
 
             rotateTransform = new RotateTransform();
             DrawingShape.RenderTransform = rotateTransform;
             DrawingShape.RenderTransformOrigin = new System.Windows.Point(0.5, 0.5); // Rotate around the center
         }
 
-        public Vector3 AreCollidedRecToBall(Ball ball)
+        public void UpdateCorners()
         {
-            Vector3 CoillisionPoint = new Vector3();
-            if (ball != null)
-            {
-                return CoillisionPoint;
-            }
-            // check the distance between the borders of the circle with the rectangle
-            // each time the ball moves it should check the the distance from the center
-            // of the ball to the center of the rectangle + distance to the broder of the rectangle
-            // where the ball collided with the rectangle
+            float halfWidth = (float)DrawingShape.Width / 2;
+            float halfHeight = (float)DrawingShape.Height / 2;
 
-            // calc the corner vectors of the rectangle
-            Center = new Vector3((float)(Position.X - (DrawingShape.Width / 2)), (float)(Position.Y - (DrawingShape.Height / 2)), 0);
+            v1 = new Vector3(Center.X - halfWidth, Center.Y - halfHeight, 0);
+            v2 = new Vector3(Center.X + halfWidth, Center.Y - halfHeight, 0);
+            v3 = new Vector3(Center.X + halfWidth, Center.Y + halfHeight, 0);
+            v4 = new Vector3(Center.X - halfWidth, Center.Y + halfHeight, 0);
 
-            v1 = new Vector3(-(float)(Center.X + (DrawingShape.Width / 2)), (float)(Center.Y + (DrawingShape.Height / 2)), 0);
-            v2 = new Vector3((float)(Center.X + (DrawingShape.Width / 2)), (float)(Center.Y + (DrawingShape.Height / 2)), 0);
-            v3 = new Vector3((float)(Center.X + (DrawingShape.Width / 2)), -(float)(Center.Y + (DrawingShape.Height / 2)), 0);
-            v4 = new Vector3(-(float)(Center.X + (DrawingShape.Width / 2)), -(float)(Center.Y + (DrawingShape.Height / 2)), 0);
-
-            float XCenterball = ball.Position.X + ball.Radius;
-            float YCenterball = ball.Position.Y + ball.Radius;
-
-            Vector3 Ballpos = new Vector3((float)Canvas.GetRight(ball.DrawingShape), YCenterball, 0);
-            for (Vector3 LeftSide = v1; LeftSide.Y >= v4.Y; LeftSide = new Vector3(LeftSide.X, LeftSide.Y - 1, LeftSide.Z))
-            {
-                if (LeftSide.X == Ballpos.X && YCenterball <= v1.Y && YCenterball > v4.Y)
-                {
-                    Debug.WriteLine("Left side collision");
-                    CoillisionPoint = Ballpos;
-                    return CoillisionPoint;
-                }
-            }
-            Ballpos = new Vector3((float)Canvas.GetLeft(ball.DrawingShape), YCenterball, 0);
-            for (Vector3 RightSide = v2; RightSide.Y >= v4.Y; RightSide = new Vector3(RightSide.X, RightSide.Y - 1, RightSide.Z))
-            {
-                if (RightSide.X == Ballpos.X && YCenterball <= v2.Y && YCenterball > v3.Y)
-                {
-                    Debug.WriteLine("Right side collision");
-                    CoillisionPoint = Ballpos;
-                    return CoillisionPoint;
-                }
-            }
-            Ballpos = new Vector3((float)Canvas.GetBottom(ball.DrawingShape), YCenterball, 0);
-            for (Vector3 UpperSide = v1; UpperSide.X <= v2.X; UpperSide = new Vector3(UpperSide.X + 1, UpperSide.Y, UpperSide.Z))
-            {
-                if (UpperSide.Y == Ballpos.Y && XCenterball <= v2.X && XCenterball > v1.X)
-                {
-                    Debug.WriteLine("upper side collision");
-                    CoillisionPoint = Ballpos;
-                    return CoillisionPoint;
-                }
-            }
-            Ballpos = new Vector3((float)Canvas.GetTop(ball.DrawingShape), YCenterball, 0);
-            for (Vector3 LowerSide = v4; LowerSide.X <= v3.X; LowerSide = new Vector3(LowerSide.X + 1, LowerSide.Y, LowerSide.Z))
-            {
-                if (LowerSide.Y == Ballpos.Y && XCenterball <= v3.X && XCenterball > v4.X)
-                {
-                    Debug.WriteLine("Lower side collision");
-                    CoillisionPoint = Ballpos;
-                    return CoillisionPoint;
-                }
-            }
-
-            return CoillisionPoint;
+            ApplyRotation();
         }
 
-        public void ResolveBallToBallCollison(Ball ball)
+        private void ApplyRotation()
+        {
+            // Create a rotation matrix
+            RotMat = Matrix.RotationZ(Angle);
+
+            // Apply rotation to each corner
+            v1 = Vector3.TransformCoordinate(v1, RotMat);
+            v2 = Vector3.TransformCoordinate(v2, RotMat);
+            v3 = Vector3.TransformCoordinate(v3, RotMat);
+            v4 = Vector3.TransformCoordinate(v4, RotMat);
+        }
+
+        public Vector3? CheckCollision(Ball ball)
+        {
+            if (ball == null) return null;
+            Vector3? collisionPoint = null;
+
+            return collisionPoint;
+        }
+
+        public void GetEdgeNormal(Vector3 edgeStart, Vector3 edgeEnd)
+        {
+            Vector3 edge = new Vector3 (edgeEnd.X - edgeStart.X, edgeEnd.Y - edgeStart.Y, edgeEnd.Z - edgeStart.Z);
+
+        }
+
+        public void RectangleProjection(Vector3 axis)
+        {
+
+        }
+
+        public void BallProjection(Vector3 axis, Ball ball)
+        {
+            if (ball == null) return;
+        }
+
+        public void DetectCollisionWithEdge(Ball ball)
+        {
+
+        }
+
+        public void ResolveCollision()
         {
 
         }
 
         public override void UpdatePosition(float deltaTime, float canvasHeight, float canvasWidth, bool IsMoving)
         {
+            // Update the position based on velocity and time step
+            Position += Velocity * deltaTime;
+            UpdateCorners(); // Update corner positions after the position change
 
+            // Define the boundaries of the simulation area
+            double minX = 0;
+            double minY = 0;
+            double maxX = canvasWidth;
+            double maxY = canvasHeight;
 
+            // Define the rectangle's bounds in the canvas
+            float halfWidth = (float)DrawingShape.Width / 2;
+            float halfHeight = (float)DrawingShape.Height / 2;
+
+            // Check for collisions with the simulation boundaries and adjust velocity accordingly
+            if (Position.X - halfWidth < minX)
+            {
+                Position = new Vector3((float)minX + halfWidth, Position.Y, Position.Z);
+                Velocity = new Vector3(-Velocity.X * BouncingFactor, Velocity.Y, Velocity.Z);
+            }
+            if (Position.X + halfWidth > maxX)
+            {
+                Position = new Vector3((float)maxX - halfWidth, Position.Y, Position.Z);
+                Velocity = new Vector3(-Velocity.X * BouncingFactor, Velocity.Y, Velocity.Z);
+            }
+            if (Position.Y - halfHeight < minY)
+            {
+                Position = new Vector3(Position.X, (float)minY + halfHeight, Position.Z);
+                Velocity = new Vector3(Velocity.X, -Velocity.Y * BouncingFactor, Velocity.Z);
+            }
+            if (Position.Y + halfHeight > maxY)
+            {
+                Position = new Vector3(Position.X, (float)maxY - halfHeight, Position.Z);
+                Velocity = new Vector3(Velocity.X, -Velocity.Y * BouncingFactor, Velocity.Z);
+            }
+
+            // Update the drawing shape position
+            if (this.DrawingShape != null)
+            {
+                Canvas.SetLeft(DrawingShape, Position.X - halfWidth);
+                Canvas.SetTop(DrawingShape, Position.Y - halfHeight);
+            }
+
+            // Update the rotation of the drawing shape
+            rotateTransform.Angle = Angle;
+        }
+
+        public void ApplyTorque(float force, float deltaTime)
+        {
+            float Torque = force;
+            float AngularAcceleration = Torque / Mass;
+            Angle += AngularAcceleration * deltaTime;
         }
     }
 }
-
