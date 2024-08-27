@@ -25,8 +25,10 @@ namespace physicsengine
             stopwatch = new Stopwatch();
 
             // Create shapes
-            CreateShape(new Ball(4.0f, System.Drawing.Color.Blue, 70f) { Position = new Vector3(100f, 100f, 0) });
-            CreateShape(new Ball(2.0f, System.Drawing.Color.Green, 50f) { Position = new Vector3(300f, 150f, 0) });
+            CreateShape(new Ball(4.0f, System.Drawing.Color.Blue, 70f, new Vector3(50f, 100f, 0)));
+            CreateShape(new Ball(2.0f, System.Drawing.Color.Green, 50f, new Vector3(200f, 100f, 0)));
+            CreateShape(new Rec(4.0f, System.Drawing.Color.Red, 70f, 100f, new Vector3(350f, 100f, 0)));
+
         }
 
         private void CreateShape(Shapes shape)
@@ -66,7 +68,7 @@ namespace physicsengine
                 var velocityX = (float)(finalMousePosition.X - initialMousePosition.X) / (float)timeTaken.TotalSeconds;
                 var velocityY = (float)(finalMousePosition.Y - initialMousePosition.Y) / (float)timeTaken.TotalSeconds;
 
-                draggedShape.Velocity = new Vector3(velocityX, velocityY, 0);
+                draggedShape.Velocity = new Vector3(velocityX / 10, velocityY / 10, 0);
                 stopwatch.Start(); // Start the stopwatch for physics update
                 Task.Run(() => StartFreeFall());
             }
