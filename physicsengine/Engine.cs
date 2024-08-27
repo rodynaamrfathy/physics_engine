@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Shapes;
+using SlimDX;
 
 namespace physicsengine
 {
@@ -28,6 +29,7 @@ namespace physicsengine
             return shapes.FirstOrDefault(s => s.DrawingShape == drawingShape);
         }
 
+
         public void Update(float deltaTime, float canvasHeight, float canvasWidth, bool IsMoving)
         {
             bool AreCollided;
@@ -48,11 +50,13 @@ namespace physicsengine
                             // Handle collision here
                         }
                     }
+                    else if (check != shape && check is Rec checkRec && shape is Ball shapeBallcolwithrec)
+                    {
+                        Vector3? collisionpoint = checkRec.CheckCollison(shapeBallcolwithrec);
+                    }
 
                 }
             }
         }
     }
-
-
 }
