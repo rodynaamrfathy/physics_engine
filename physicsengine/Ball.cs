@@ -13,11 +13,12 @@ namespace physicsengine
     {
         public float Radius { get; set; }
 
-        public Ball(float mass, System.Drawing.Color color, float radius) : base(mass, color)
+        public Ball(float mass, System.Drawing.Color color, float radius, Vector3 Pos) : base(mass, color)
         {
             // Set the initial position of the ball
             Velocity = new Vector3(0, 0, 0);
             Radius = radius;
+            Position = Pos;
             DrawingShape = new Ellipse()
             {
                 Width = Radius * 2,
@@ -79,9 +80,9 @@ namespace physicsengine
             Vector3 UnitNormal = new Vector3(Normal.X/NormNormal, Normal.Y / NormNormal, 0);
             Vector3 UnitTangent = new Vector3(- UnitNormal.Y, UnitNormal.X, 0);
 
-            float V1n = Vector3.Dot(UnitNormal, ball.Velocity);
+            float V1n = Vector3.Dot(UnitNormal, ball.Velocity) * ball.BouncingFactor;
             float V1t = Vector3.Dot(UnitTangent, ball.Velocity); // unchanged before and after collision 
-            float V2n = Vector3.Dot(UnitNormal, this.Velocity);
+            float V2n = Vector3.Dot(UnitNormal, this.Velocity) * this.BouncingFactor;
             float V2t = Vector3.Dot(UnitTangent, this.Velocity); // unchanged before and after collision 
 
             float MassSum = this.Mass + ball.Mass;
