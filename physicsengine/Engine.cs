@@ -52,7 +52,7 @@ namespace physicsengine
                     }
                     else if (check != shape && check is Rec checkRec && shape is Ball shapeBallcolwithrec)
                     {
-                        Vector3? collisionpoint = checkRec.CheckCollison(shapeBallcolwithrec);
+                        Vector3? collisionpoint = checkRec.CheckCollision(shapeBallcolwithrec);
                     }
 
                 }
