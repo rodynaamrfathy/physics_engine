@@ -29,6 +29,20 @@ namespace physicsengine
             };
         }
 
+        public void BallProjection(Vector3 axis, out float min, out float max)
+        {
+            //// Normalize the axis
+            //axis = Vector3.Normalize(axis);
+
+            // Project the ball's center onto the axis
+            float projection = Vector3.Dot(Position, axis);
+
+            // Ball projection interval is the projection +/- the radius
+            min = projection - Radius;
+            max = projection + Radius;
+        }
+
+
         public bool AreCollidedBallToBall(Ball ball2)
         {
             if (ball2 == null) return false;
