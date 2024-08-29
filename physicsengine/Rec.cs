@@ -13,6 +13,7 @@ namespace physicsengine
 {
     internal class Rec : Shapes
     {
+        public float AngularVelocity;
         public float Angle;
         private RotateTransform rotateTransform;
         public Matrix RotMat;
@@ -131,42 +132,50 @@ namespace physicsengine
             max = Math.Max(Math.Max(projections[0], projections[1]), Math.Max(projections[2], projections[3]));
         }
 
-        public bool DetectCollisionWithEdge(Ball ball, Vector3 edgeStart, Vector3 edgeEnd, out Vector3? CollisionPoint)
+        public bool DetectCollisionWithEdge(Ball ball, Vector3 edgeStart, Vector3 edgeEnd, out Vector3? collisionPoint)
         {
-            Vector3 normalizedAxis = GetEdgeNormal(edgeStart, edgeEnd);
+            Vector3 edge = edgeEnd - edgeStart;
+            Vector3 edgeNormal = GetEdgeNormal(edgeStart, edgeEnd);
             float minRec, maxRec;
             float minBall, maxBall;
 
-            RectangleProjection(normalizedAxis, out minRec, out maxRec);
-            ball.BallProjection(normalizedAxis, out minBall, out maxBall);
+            RectangleProjection(edgeNormal, out minRec, out maxRec);
+            ball.BallProjection(edgeNormal, out minBall, out maxBall);
 
-            float A = edgeEnd.Y - edgeStart.Y;
-            float B = edgeStart.X - edgeEnd.X;
-            float C = (edgeEnd.X * edgeStart.Y) - (edgeStart.X * edgeEnd.Y);
-
-            float Distance = (float)(Math.Abs(A * ball.Position.X + B * ball.Position.Y + C) / Math.Sqrt(A * A + B * B));
-
-            if (!(maxBall < minRec || minBall > maxRec))
+            if (maxBall < minRec || minBall > maxRec)
             {
-                if (Distance <= ball.Radius)
-                {
-                    // Calculate the closest point on the line
-                    float denom = A * A + B * B;
-                    float t = ((ball.Position.X * A + ball.Position.Y * B + C) / denom);
-                    Vector3 closestPoint = new Vector3(ball.Position.X - A * t / denom, ball.Position.Y - B * t / denom, 0);
+                collisionPoint = null;
+                return false;
+            }
 
-                    // Check if the closestPoint lies within the edge segment bounds , el 3 vector are colliner
-                    if (IsPointOnSegment(closestPoint, edgeStart, edgeEnd))
-                    {
-                        CollisionPoint = closestPoint;
-                        return true;
-                    }
+            float A = edge.Y;
+            float B = -edge.X;
+            float C = (edge.X * edgeStart.Y) - (edge.Y * edgeStart.X);
+
+            float distance = Math.Abs(A * ball.Position.X + B * ball.Position.Y + C) / (float)Math.Sqrt(A * A + B * B);
+
+            if (distance <= ball.Radius)
+            {
+                float denom = A * A + B * B;
+                float t = ((ball.Position.X * A + ball.Position.Y * B + C) / denom);
+
+                Vector3 closestPoint = new Vector3(
+                    ball.Position.X - A * t / denom,
+                    ball.Position.Y - B * t / denom,
+                    0
+                );
+
+                if (IsPointOnSegment(closestPoint, edgeStart, edgeEnd))
+                {
+                    collisionPoint = closestPoint;
+                    return true;
                 }
             }
 
-            CollisionPoint = null;
+            collisionPoint = null;
             return false;
         }
+
 
         private bool IsPointOnSegment(Vector3 point, Vector3 segStart, Vector3 segEnd)
         {
@@ -194,15 +203,24 @@ namespace physicsengine
         }
 
 
-        public void ResolveCollision()
-        {
-
-        }
-
         public override void UpdatePosition(float deltaTime, float canvasHeight, float canvasWidth, bool IsMoving)
         {
-            // Update the position based on velocity and time step
+            // Calculate the gravity force
+            Vector3 gravityForce = GravityForce();
+
+            // Update velocity based on gravity
+            Velocity += gravityForce * deltaTime / Mass;
+
+            // Update position based on velocity
             Position += Velocity * deltaTime;
+
+            Angle += AngularVelocity * deltaTime;
+
+            if (rotateTransform != null)
+            {
+                rotateTransform.Angle = Angle;
+            }
+
             UpdateCorners(); // Update corner positions after the position change
 
             // Define the boundaries of the simulation area
@@ -220,21 +238,29 @@ namespace physicsengine
             {
                 Position = new Vector3((float)minX + halfWidth, Position.Y, Position.Z);
                 Velocity = new Vector3(-Velocity.X * BouncingFactor, Velocity.Y, Velocity.Z);
+                AngularVelocity = (-Velocity.X * BouncingFactor / Mass) / deltaTime;
+                AngularVelocity /= 10;
             }
             if (Position.X + halfWidth > maxX)
             {
                 Position = new Vector3((float)maxX - halfWidth, Position.Y, Position.Z);
                 Velocity = new Vector3(-Velocity.X * BouncingFactor, Velocity.Y, Velocity.Z);
+                AngularVelocity = (-Velocity.X * BouncingFactor / Mass) / deltaTime;
+                AngularVelocity /= 10;
             }
             if (Position.Y - halfHeight < minY)
             {
                 Position = new Vector3(Position.X, (float)minY + halfHeight, Position.Z);
                 Velocity = new Vector3(Velocity.X, -Velocity.Y * BouncingFactor, Velocity.Z);
+                AngularVelocity = (-Velocity.X * BouncingFactor / Mass) / deltaTime;
+                AngularVelocity /= 10;
             }
             if (Position.Y + halfHeight > maxY)
             {
                 Position = new Vector3(Position.X, (float)maxY - halfHeight, Position.Z);
                 Velocity = new Vector3(Velocity.X, -Velocity.Y * BouncingFactor, Velocity.Z);
+                AngularVelocity = (-Velocity.X * BouncingFactor / Mass) / deltaTime;
+                AngularVelocity /= 10;
             }
 
             // Update the drawing shape position
@@ -244,15 +270,7 @@ namespace physicsengine
                 Canvas.SetTop(DrawingShape, Position.Y - halfHeight);
             }
 
-            // Update the rotation of the drawing shape
-            rotateTransform.Angle = Angle;
         }
 
-        public void ApplyTorque(float force, float deltaTime)
-        {
-            float Torque = force;
-            float AngularAcceleration = Torque / Mass;
-            Angle += AngularAcceleration * deltaTime;
-        }
     }
 }
