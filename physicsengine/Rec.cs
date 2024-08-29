@@ -1,9 +1,5 @@
 using SlimDX;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Runtime;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -26,7 +22,6 @@ namespace physicsengine
         public Rec(float mass, System.Drawing.Color color, float width, float height, Vector3 Pos) : base(mass, color)
         {
             Angle = 0;
-            // Set the initial position of the rectangle
             Velocity = new Vector3(0, 0, 0);
             RotMat = new Matrix();
 
@@ -40,9 +35,8 @@ namespace physicsengine
             };
 
             Position = Pos;
-            Center = new Vector3((float)(Position.X - (DrawingShape.Width / 2)), (float)(Position.Y - (DrawingShape.Height / 2)), 0);
+            Center = Position;
 
-            // Initialize corners
             UpdateCorners();
 
             rotateTransform = new RotateTransform();
@@ -55,12 +49,19 @@ namespace physicsengine
             float halfWidth = (float)DrawingShape.Width / 2;
             float halfHeight = (float)DrawingShape.Height / 2;
 
-            v1 = new Vector3(Center.X - halfWidth, Center.Y - halfHeight, 0);
-            v2 = new Vector3(Center.X + halfWidth, Center.Y - halfHeight, 0);
-            v3 = new Vector3(Center.X + halfWidth, Center.Y + halfHeight, 0);
-            v4 = new Vector3(Center.X - halfWidth, Center.Y + halfHeight, 0);
+            // Define the local corners before rotation
+            v1 = new Vector3(-halfWidth, -halfHeight, 0);
+            v2 = new Vector3(halfWidth, -halfHeight, 0);
+            v3 = new Vector3(halfWidth, halfHeight, 0);
+            v4 = new Vector3(-halfWidth, halfHeight, 0);
 
             ApplyRotation();
+
+            // Translate the rotated corners to the rectangle's position
+            v1 += Center;
+            v2 += Center;
+            v3 += Center;
+            v4 += Center;
         }
 
         private void ApplyRotation()
@@ -68,7 +69,7 @@ namespace physicsengine
             // Create a rotation matrix
             RotMat = Matrix.RotationZ(Angle);
 
-            // Apply rotation to each corner
+            // Apply rotation to each corner relative to the center (local space)
             v1 = Vector3.TransformCoordinate(v1, RotMat);
             v2 = Vector3.TransformCoordinate(v2, RotMat);
             v3 = Vector3.TransformCoordinate(v3, RotMat);
@@ -82,19 +83,18 @@ namespace physicsengine
 
             Vector3[][] edges = new Vector3[][]
             {
-                    new Vector3[] { v1, v2 },
-                    new Vector3[] { v2, v3 },
-                    new Vector3[] { v3, v4 },
-                    new Vector3[] { v4, v1 }
+                new Vector3[] { v1, v2 },
+                new Vector3[] { v2, v3 },
+                new Vector3[] { v3, v4 },
+                new Vector3[] { v4, v1 }
             };
 
-            bool[] edgescollided = new bool[4];
-
+            bool[] edgesCollided = new bool[4];
             int i = 0;
 
             foreach (var edge in edges)
             {
-                edgescollided[i] = DetectCollisionWithEdge(ball, edge[0], edge[1], out collisionPoint);
+                edgesCollided[i] = DetectCollisionWithEdge(ball, edge[0], edge[1], out collisionPoint);
                 i++;
             }
 
@@ -103,22 +103,13 @@ namespace physicsengine
 
         public Vector3 GetEdgeNormal(Vector3 edgeStart, Vector3 edgeEnd)
         {
-            // Calculate the edge vector
             Vector3 edge = edgeEnd - edgeStart;
-
-            // Find the perpendicular vector (normal) to the edge
             Vector3 normal = new Vector3(-edge.Y, edge.X, 0);
-
-            // Normalize the normal vector
             return Vector3.Normalize(normal);
         }
 
-        public void RectangleProjection(Vector3 axis, out float min, out float max) // out means passed by reference
+        public void RectangleProjection(Vector3 axis, out float min, out float max)
         {
-            //// Normalize the axis
-            //axis = Vector3.Normalize(axis);
-
-            // Project each corner of the rectangle onto the axis
             float[] projections = new float[]
             {
                 Vector3.Dot(v1, axis),
@@ -127,25 +118,23 @@ namespace physicsengine
                 Vector3.Dot(v4, axis)
             };
 
-            // Find the minimum and maximum projections
             min = Math.Min(Math.Min(projections[0], projections[1]), Math.Min(projections[2], projections[3]));
             max = Math.Max(Math.Max(projections[0], projections[1]), Math.Max(projections[2], projections[3]));
         }
 
         public bool DetectCollisionWithEdge(Ball ball, Vector3 edgeStart, Vector3 edgeEnd, out Vector3? collisionPoint)
         {
+            collisionPoint = null;
+
             Vector3 edge = edgeEnd - edgeStart;
             Vector3 edgeNormal = GetEdgeNormal(edgeStart, edgeEnd);
-            float minRec, maxRec;
-            float minBall, maxBall;
 
-            RectangleProjection(edgeNormal, out minRec, out maxRec);
-            ball.BallProjection(edgeNormal, out minBall, out maxBall);
+            RectangleProjection(edgeNormal, out float minRec, out float maxRec);
+            ball.BallProjection(edgeNormal, out float minBall, out float maxBall);
 
             if (maxBall < minRec || minBall > maxRec)
             {
-                collisionPoint = null;
-                return false;
+                return false; // No collision
             }
 
             float A = edge.Y;
@@ -172,28 +161,22 @@ namespace physicsengine
                 }
             }
 
-            collisionPoint = null;
             return false;
         }
 
-
         private bool IsPointOnSegment(Vector3 point, Vector3 segStart, Vector3 segEnd)
         {
-            // Calculate the vectors for the segment and from segment start to point
             Vector3 segmentVector = segEnd - segStart;
             Vector3 pointVector = point - segStart;
 
-            // Calculate dot products
             float segmentLengthSquared = Vector3.Dot(segmentVector, segmentVector);
             float projection = Vector3.Dot(pointVector, segmentVector);
 
-            // Check if the point projection falls on the segment
             if (projection < 0 || projection > segmentLengthSquared)
             {
                 return false;
             }
 
-            // Check if the point is within the bounding box of the segment
             float minX = Math.Min(segStart.X, segEnd.X);
             float maxX = Math.Max(segStart.X, segEnd.X);
             float minY = Math.Min(segStart.Y, segEnd.Y);
@@ -202,16 +185,10 @@ namespace physicsengine
             return point.X >= minX && point.X <= maxX && point.Y >= minY && point.Y <= maxY;
         }
 
-
         public override void UpdatePosition(float deltaTime, float canvasHeight, float canvasWidth, bool IsMoving)
         {
-            // Calculate the gravity force
             Vector3 gravityForce = GravityForce();
-
-            // Update velocity based on gravity
             Velocity += gravityForce * deltaTime / Mass;
-
-            // Update position based on velocity
             Position += Velocity * deltaTime;
 
             Angle += AngularVelocity * deltaTime;
@@ -221,56 +198,41 @@ namespace physicsengine
                 rotateTransform.Angle = Angle;
             }
 
-            UpdateCorners(); // Update corner positions after the position change
+            UpdateCorners();
 
-            // Define the boundaries of the simulation area
-            double minX = 0;
-            double minY = 0;
-            double maxX = canvasWidth;
-            double maxY = canvasHeight;
-
-            // Define the rectangle's bounds in the canvas
             float halfWidth = (float)DrawingShape.Width / 2;
             float halfHeight = (float)DrawingShape.Height / 2;
 
-            // Check for collisions with the simulation boundaries and adjust velocity accordingly
-            if (Position.X - halfWidth < minX)
+            if (Position.X - halfWidth < 0)
             {
-                Position = new Vector3((float)minX + halfWidth, Position.Y, Position.Z);
+                Position = new Vector3(halfWidth, Position.Y, Position.Z);
                 Velocity = new Vector3(-Velocity.X * BouncingFactor, Velocity.Y, Velocity.Z);
-                AngularVelocity = (-Velocity.X * BouncingFactor / Mass) / deltaTime;
-                AngularVelocity /= 10;
+                AngularVelocity = (-Velocity.X * BouncingFactor / Mass) / deltaTime / 10;
             }
-            if (Position.X + halfWidth > maxX)
+            if (Position.X + halfWidth > canvasWidth)
             {
-                Position = new Vector3((float)maxX - halfWidth, Position.Y, Position.Z);
+                Position = new Vector3(canvasWidth - halfWidth, Position.Y, Position.Z);
                 Velocity = new Vector3(-Velocity.X * BouncingFactor, Velocity.Y, Velocity.Z);
-                AngularVelocity = (-Velocity.X * BouncingFactor / Mass) / deltaTime;
-                AngularVelocity /= 10;
+                AngularVelocity = (-Velocity.X * BouncingFactor / Mass) / deltaTime / 10;
             }
-            if (Position.Y - halfHeight < minY)
+            if (Position.Y - halfHeight < 0)
             {
-                Position = new Vector3(Position.X, (float)minY + halfHeight, Position.Z);
+                Position = new Vector3(Position.X, halfHeight, Position.Z);
                 Velocity = new Vector3(Velocity.X, -Velocity.Y * BouncingFactor, Velocity.Z);
-                AngularVelocity = (-Velocity.X * BouncingFactor / Mass) / deltaTime;
-                AngularVelocity /= 10;
+                AngularVelocity = (-Velocity.X * BouncingFactor / Mass) / deltaTime / 10;
             }
-            if (Position.Y + halfHeight > maxY)
+            if (Position.Y + halfHeight > canvasHeight)
             {
-                Position = new Vector3(Position.X, (float)maxY - halfHeight, Position.Z);
+                Position = new Vector3(Position.X, canvasHeight - halfHeight, Position.Z);
                 Velocity = new Vector3(Velocity.X, -Velocity.Y * BouncingFactor, Velocity.Z);
-                AngularVelocity = (-Velocity.X * BouncingFactor / Mass) / deltaTime;
-                AngularVelocity /= 10;
+                AngularVelocity = (-Velocity.X * BouncingFactor / Mass) / deltaTime / 10;
             }
 
-            // Update the drawing shape position
-            if (this.DrawingShape != null)
+            if (DrawingShape != null)
             {
                 Canvas.SetLeft(DrawingShape, Position.X - halfWidth);
                 Canvas.SetTop(DrawingShape, Position.Y - halfHeight);
             }
-
         }
-
     }
 }
