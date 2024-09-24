@@ -29,7 +29,10 @@ namespace physicsengine
             CreateShape(new Ball(2.0f, System.Drawing.Color.Green, 50f, new Vector3(200f, 100f, 0)));
             CreateShape(new Rec(4.0f, System.Drawing.Color.Red, 70f, 100f, new Vector3(350f, 100f, 0)));
 
+            // Start the free fall simulation
+            Task.Run(() => StartFreeFall());
         }
+
 
         private void CreateShape(Shapes shape)
         {
@@ -70,7 +73,7 @@ namespace physicsengine
 
                 draggedShape.Velocity = new Vector3(velocityX / 10, velocityY / 10, 0);
                 stopwatch.Start(); // Start the stopwatch for physics update
-                Task.Run(() => StartFreeFall());
+                //Task.Run(() => StartFreeFall()); // i do not want this line here i want it to start running when the game starts
             }
         }
 
@@ -87,21 +90,23 @@ namespace physicsengine
 
         private void StartFreeFall()
         {
-            while (draggedShape != null && !draggedShape.IsMoving)
+            while (true) // Continuously run the simulation
             {
-                Dispatcher.Invoke(() =>
+                if (draggedShape != null && !draggedShape.IsMoving)
                 {
-                    float deltaTime = (float)stopwatch.Elapsed.TotalSeconds * 10;
-                    stopwatch.Restart();
-                    // update physics and check for collision
-                    engine.Update(deltaTime, (float)ballcanvas.ActualHeight, (float)ballcanvas.ActualWidth, true);
-                    renderer.UpdateCanvas(); // Redraw the canvas to reflect changes
-                });
+                    Dispatcher.Invoke(() =>
+                    {
+                        float deltaTime = (float)stopwatch.Elapsed.TotalSeconds * 10;
+                        stopwatch.Restart();
+                        // Update physics and check for collision
+                        engine.Update(deltaTime, (float)ballcanvas.ActualHeight, (float)ballcanvas.ActualWidth, true);
+                        renderer.UpdateCanvas(); // Redraw the canvas to reflect changes
+                    });
+                }
 
                 Thread.Sleep(10); // Control update frequency
             }
-
-            stopwatch.Stop(); // Stop when the simulation ends
         }
+
     }
 }
